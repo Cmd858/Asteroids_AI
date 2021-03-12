@@ -6,21 +6,21 @@ class Pop:
         self.popnum = popnum  # total size of population
         self.rannum = rannum  # number of randomly generated networks in each generation
         self.keepnum = keepnum  # number of nets to keep in each generation
-        self.main_inputs = None
+        self.main_inputs = None  # starts as None for some reason, can't remember why
         self.innovlist = []
         self.nets = []
-        for i in range(popnum):
+        for i in range(popnum):  # populates self.nets with popnum amount of nets
             self.nets.append(Net(8, 4, self))
             for j in range(10):
                 # print(j)
-                self.nets[i].mutate()
+                self.nets[i].mutate()  # applies ten starting mutations to net, maybe should start with less but idk
         # hmm no bc dealt with in main, maybe should do in here though?
 
     def mutate_all(self, repval):  # value to repeat mutation
         for i in range(len(self.nets)):
-            for j in range(repval):  #
+            for j in range(repval):  # iterates through all nets and muatates them
                 self.nets[i].mutate()
-                self.nets[i].getlayers()
+                self.nets[i].getlayers()  # idk why this is still here
 
     def take_main_inputs(self, inputs):  # takes main net inputs from program as list
         self.main_inputs = inputs
@@ -29,11 +29,11 @@ class Pop:
         pass
 
     def get_innovs(self):
-        return self.innovlist
+        return self.innovlist  # give list of innovs to nets when requested, yes could be property pycharm but idc
 
     def add_innov(self, innov):  # take innov as (in, out)
-        if not innov in self.innovlist:
-            self.innovlist.append(innov)
+        if not innov in self.innovlist:  # check if innov in list
+            self.innovlist.append(innov)  # adds innov to list
             # return len(self.innovlist)-1  # makes first num 0
         # else:
         # do i need to return a value here?
@@ -50,7 +50,7 @@ class Pop:
         pass
 
     def draw_net(self, screen, x, y, xbuf, ybuf, r):
-        self.nets[-1].draw_net(screen, x, y, xbuf, ybuf, r)
+        self.nets[-1].draw_net(screen, x, y, xbuf, ybuf, r)  # calls drawnet() for last net in population bc idk why
 
 # TODO: copy using inheritance instead of deepcopy
 # TODO: maybe use same obj instead of expensive delete & remake
