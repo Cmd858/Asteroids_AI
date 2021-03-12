@@ -8,30 +8,30 @@ class Net:
         # depreciated for now
         # self.popobj = popobj  # brings in the population object to allow transfer of innovation numbers
         self.base = basepop  # inherited class to interact with innov functions
-        self.net = [[], []]
+        self.net = [[], []]  # current net: [input nodes (index 0), output nodes (index -1 to allow expansion)]
         self.colour = (0, 0, 0)  # used exclusively in drawnet
-        self.innum = innum
-        self.outnum = outnum
-        self.nodecount = innum + outnum
+        self.innum = innum  # number of input nodes, must be equal to num of maininputs or something will go wrong
+        self.outnum = outnum  # num of output nodes
+        self.nodecount = innum + outnum  # total current nodes in the system, used for innovs I think
         self.innovs = []  # stores innovs in this net for easy access
-        for i in range(innum):
+        for i in range(innum):  # add all required inputs
             self.net[0].append([Node(0, i), random() * 2 - 1])
-        for i in range(outnum):
+        for i in range(outnum):  # add all required outputs
             self.net[-1].append([Node(-1, i + len(self.net[0])), random() * 2 - 1])  # use -1 to allow for dynamic size
 
     def mutate(self):  # add var to create minimum mutations, prevent going though with no change
         # self.base.add_innov('mate')
-        innovs = self.base.get_innovs()
-        if randint(0, 1) == 0:  # connection input, arbitrary randint values
+        innovs = self.base.get_innovs()  # get innov from base class (Pop2)
+        if randint(0, 1) == 0:  # connection input, arbitrary randint values, change later to represent config settings
             index1 = randint(1, len(self.net) - 1)  # exclude input layer by starting from 1
             index2 = randint(0, len(self.net[index1]) - 1)
             connode1 = self.net[index1][index2]  # select the right connection node (output)
-            index3 = randint(0, index1 - 1)
-            index4 = randint(0, len(self.net[index3]) - 1)
+            index3 = randint(0, index1 - 1)  # probably useful somewhere
+            index4 = randint(0, len(self.net[index3]) - 1)  # oh right, selects nodes by getting random pos
             connode2 = self.net[index3][index4]  # select second node (input)
             if not (connode2[0].nodenum, connode1[0].nodenum) in self.innovs:
                 connode1[0].inputs.append(connode2)  # append node object to inputs
-                self.base.add_innov((connode2[0].nodenum, connode1[0].nodenum))
+                self.base.add_innov((connode2[0].nodenum, connode1[0].nodenum))  # create connection between nodes
                 self.innovs.append((connode2[0].nodenum, connode1[0].nodenum))  # adds innov value to pop and local
             # self.popobj.add_innov((connode2, connode1))  # should show in > out
         # Node Addition Mutation
@@ -66,27 +66,27 @@ class Net:
                             for i in range(len(self.net[layer])):
                                 self.net[layer][i][0].layer += 1  # adjusts layer var in base
                         else:
-                            return
+                            return  # prevents net growing too large
                     # if len(self.net[layer][nodeindex][0].inputs) > 0:
                     self.net[layer][nodeindex][0].inputs.append(newnode)  # appends new input to net's vars
-                    inmid = (targetnode[0].nodenum, newnode[0].nodenum)
-                    midout = (newnode[0].nodenum, self.net[layer][nodeindex][0].nodenum)
+                    inmid = (targetnode[0].nodenum, newnode[0].nodenum)  # get tuple of connection intersection
+                    midout = (newnode[0].nodenum, self.net[layer][nodeindex][0].nodenum)  # mess but works
                     self.base.add_innov(inmid)  # (in > new)
                     self.base.add_innov(midout)  # (new > out)
                     self.innovs.append(inmid)
-                    self.innovs.append(midout)
+                    self.innovs.append(midout)  # intersects new node in-between existing connection
                     self.nodecount += 1
-                    self.correct_layers()
+                    self.correct_layers()  # make sure all layer vars are correct
                     # else:
                     #   print('hmm probs shouldnt happen')
         if randint(0, 1) == 0:  # weight mutation
-            pass
+            pass  # work in progress, to be added later
         if randint(0, 1) == 0:  # bias mutation
             pass
             # TODO: add innovs appends in node mutation
             # TODO: add bias and weight mutation
 
-    def run_net(self, inputs):  # inputs are program maininputs
+    def run_net(self, inputs):  # inputs are program maininputs, this func run from func reference from Pop2 (probs)
         if len(inputs) != len(self.net[0]):
             raise ValueError('Number of inputs values does not match input node number')
         outputs = []
@@ -102,41 +102,42 @@ class Net:
 
     def untick_nodes(self):  # force recalculation because of new value inputs
         for i in range(len(self.net)):
-            for j in range(len(self.net[i])):
+            for j in range(len(self.net[i])):  # iter through all nodes in each layer
                 self.net[i][j][0].ticked = 0
 
     def getlayers(self):  # temp func to detect faults
         for i in range(len(self.net)):
-            for j in range(len(self.net[i])):
+            for j in range(len(self.net[i])):  # tbh not really sure why this is here
                 pass
                 # print(self.net[i][j][0].nodenum, self.net[i][j][0].layer, i)
 
-    def draw_net(self, screen, x, y, xbuf, ybuf, r):  # xbuf == buffer space between nodes on x axis
+    def draw_net(self, screen, x, y, xbuf, ybuf, r):  # func for visual representation of connections
+        # xbuf == buffer space between nodes on x axis
         # x, y for top left because nets needs room to expand
         # print('drawnet')
         width = len(self.net)
         maxh = 0
         for i in self.net:
             if maxh < len(i):
-                maxh = len(i)
-        for i in range(len(self.net)):
+                maxh = len(i)  # get max node height
+        for i in range(len(self.net)):  # iter through: layers, nodes in layer, inputs in node (i, j, k)
             # print(f'len {i}: {len(self.net[i])}')
-            for j in range(len(self.net[i])):
+            for j in range(len(self.net[i])):  # should probs rename loop vars but cba
                 x1 = x - xbuf * (width - i)  # calculate location of node
                 y1 = y + ybuf * (j + (maxh - len(self.net[i])) / 2)
                 draw.circle(screen, (255, 255, 255), (x1, y1), r)
-                for k in range(len(self.net[i][j][0].inputs)):
+                for k in range(len(self.net[i][j][0].inputs)):  # iterate through all nodes to draw inputs
                     # print(i, j, k)
                     # print(self.net)
                     # out = self.net[-i][j]
                     inp = self.net[i][j][0].inputs[k][0]
-                    x2 = x - xbuf * (width - inp.layer)
+                    x2 = x - xbuf * (width - inp.layer)  # complicated calcs for positions
                     # print(self.net[i][j][0].inputs[k])
                     y2 = y + ybuf * (self.net[inp.layer].index(self.net[i][j][0].inputs[k]) + (
                                 maxh - len(self.net[inp.layer])) / 2)
                     # gets pos of list
                     if self.net[i][j][0].inputs[k][1] >= 0:
-                        self.colour = (220, 0, 0)
+                        self.colour = (220, 0, 0)  # set colour and draw net connections
                         draw.line(screen, self.colour, (x1, y1), (x2, y2), int(self.net[i][j][0].inputs[k][1] * 3))
                     if self.net[i][j][0].inputs[k][1] < 0:
                         self.colour = (0, 0, 220)
@@ -145,8 +146,8 @@ class Net:
                     # ofset on y axis to center on middle, not top
 
     def correct_layers(self):
-        for i in range(len(self.net)):
-            for j in range(len(self.net[i])):
+        for i in range(len(self.net)):  # iterate through each net layer
+            for j in range(len(self.net[i])):  # iterate through each node in layer i
                 self.net[i][j][0].layer = i  # to fix for new layer creation
 
 # TODO: Pop2 controlled innov nums
