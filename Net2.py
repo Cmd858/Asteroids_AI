@@ -24,10 +24,20 @@ class Net:
         innovs = self.base.get_innovs()  # get innov from base class (Pop2)
         if randint(0, 1) == 0:  # connection input, arbitrary randint values, change later to represent config settings
             index1 = randint(1, len(self.net) - 1)  # exclude input layer by starting from 1
-            index2 = randint(0, len(self.net[index1]) - 1)
+            if len(self.net[index1]) - 1 > 0:  # prevent empty randrange error
+                index2 = randint(0, len(self.net[index1]) - 1)  # pick from list of nodes
+            elif len(self.net[index1]) - 1 == 1:
+                index2 = 0
+            else:
+                return
             connode1 = self.net[index1][index2]  # select the right connection node (output)
             index3 = randint(0, index1 - 1)  # probably useful somewhere
-            index4 = randint(0, len(self.net[index3]) - 1)  # oh right, selects nodes by getting random pos
+            if len(self.net[index3]) - 1 > 0:
+                index4 = randint(0, len(self.net[index3]) - 1)  # oh right, selects nodes by getting random pos
+            elif len(self.net[index3]) - 1 == 1:
+                index4 = 0
+            else:
+                return
             connode2 = self.net[index3][index4]  # select second node (input)
             if not (connode2[0].nodenum, connode1[0].nodenum) in self.innovs:
                 connode1[0].inputs.append(connode2)  # append node object to inputs
@@ -35,20 +45,26 @@ class Net:
                 self.innovs.append((connode2[0].nodenum, connode1[0].nodenum))  # adds innov value to pop and local
             # self.popobj.add_innov((connode2, connode1))  # should show in > out
         # Node Addition Mutation
-        if randint(0, 1) == 0:  # node mutation
+        if randint(0, 3) == 0:  # node mutation
             # figure out way way to add more than one layer but not too many
             gotlayer = False
-            layer = randint(0, len(self.net) - 1)
-            # layer = len(self.net) - 1
-            # while not gotlayer:  # recurse back through possibilities
-            #    if randint(0, 1) != 0:  # 1/4 chance to fail
-            #        gotlayer = True
-            #    else:
-            #        layer -= 1  # maybe add var for hard cap to stop infinite expansion
+            # TODO: make new layer seperate mutation
+            #layer = randint(0, len(self.net) - 1)
+            layer = len(self.net) - 1
+            while not gotlayer:  # recurse back through possibilities
+               if randint(0, 2) != 0:  # 1/3 chance to fail
+                   gotlayer = True
+               else:
+                   layer -= 1  # maybe add var for hard cap to stop infinite expansion
             if len(self.net) >= 7:
                 layer -= 1  # attempt to hard cap
             if layer > 0:  # 1 bc this node needs to have an input
-                nodeindex = randint(0, len(self.net[layer]) - 1)  # get index of output node used (second index)
+                if len(self.net[layer]) - 1 > 0:
+                    nodeindex = randint(0, len(self.net[layer]) - 1)
+                elif len(self.net[layer]) - 1 == 1:
+                    nodeindex = 0
+                else:
+                    return
                 if len(self.net[layer][nodeindex][0].inputs) > 1:  # bc cant have randrange of len 1
                     inpindex = randint(0, len(self.net[layer][nodeindex][0].inputs) - 1)  # get index of input
                 else:
@@ -60,13 +76,17 @@ class Net:
                     if layer - targetnode[0].layer > 1:  # check to see if there is a gap layer between connections
                         self.net[layer - 1].append(newnode)  # appends node in gap layer to left of output node
                     else:
-                        if len(self.net) < 10:
-                            self.net.insert(layer, [newnode])  # if no gap layer, creates one here
-                            layer += 1
-                            for i in range(len(self.net[layer])):
-                                self.net[layer][i][0].layer += 1  # adjusts layer var in base
+                        if layer + 1 < len(self.net) - 2:  # check if layer can move, checking for layer count
+                            layer += 1  # TODO: make sure the mutations are safe and not wonky
                         else:
-                            return  # prevents net growing too large
+                            return  # if there is no space, cancel the mutation
+                        #if len(self.net) < 10:
+                         #   self.net.insert(layer, [newnode])  # if no gap layer, creates one here
+                          #  layer += 1
+                           # for i in range(len(self.net[layer])):
+                            #    self.net[layer][i][0].layer += 1  # adjusts layer var in base
+                        #else:
+                         #   return  # prevents net growing too large
                     # if len(self.net[layer][nodeindex][0].inputs) > 0:
                     self.net[layer][nodeindex][0].inputs.append(newnode)  # appends new input to net's vars
                     inmid = (targetnode[0].nodenum, newnode[0].nodenum)  # get tuple of connection intersection
@@ -79,12 +99,20 @@ class Net:
                     self.correct_layers()  # make sure all layer vars are correct
                     # else:
                     #   print('hmm probs shouldnt happen')
+        if randint(0, 10) == 0:
+            if len(self.net) < 10:
+                if len(self.net)-2 > 1:
+                    self.net.insert(randint(1, len(self.net)-2), [])  # TODO: check for jank, possible range of 1 len error
+                else:
+                    self.net.insert(1, [])
         if randint(0, 1) == 0:  # weight mutation
             pass  # work in progress, to be added later
         if randint(0, 1) == 0:  # bias mutation
             pass
-            # TODO: add innovs appends in node mutation
-            # TODO: add bias and weight mutation
+        self.correct_layers()
+        # TODO: fix skip crash on max layers
+        # TODO: add innovs appends in node mutation
+        # TODO: add bias and weight mutation
 
     def run_net(self, inputs):  # inputs are program maininputs, this func run from func reference from Pop2 (probs)
         if len(inputs) != len(self.net[0]):

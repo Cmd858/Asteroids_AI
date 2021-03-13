@@ -15,6 +15,7 @@ class Pop:
                 # print(j)
                 self.nets[i].mutate()  # applies ten starting mutations to net, maybe should start with less but idk
         # hmm no bc dealt with in main, maybe should do in here though?
+        # TODO: introduce speciation
 
     def mutate_all(self, repval):  # value to repeat mutation
         for i in range(len(self.nets)):
@@ -42,6 +43,7 @@ class Pop:
 
     def combfunc(self, a, b):
         pass
+        # TODO: actually breed best of the species
 
     def filesave(self, a, b, c, d):
         pass
@@ -70,3 +72,4 @@ class Pop:
 # LINK: http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf
 
 # TODO: move population management to pop2, only allow I/O from external classes
+# TODO: maybe reintroduce random asteroids with fitness as mean of attempts
