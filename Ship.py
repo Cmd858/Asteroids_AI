@@ -1,4 +1,5 @@
 from pygame.locals import *
+from pygame.font import SysFont
 
 from Asteroid import *
 # from Net2 import Net
@@ -10,7 +11,7 @@ from Shot import *
 
 class Ship:
 
-    def __init__(self, vardict, colour, netfunc):  # netfunc is function reference for corresponding net class
+    def __init__(self, vardict, colour, netfunc, getnetfunc):  # netfunc is function reference for corresponding net class
         # net False means human controlled, otherwise None = random, net class = mutated
         if netfunc is False:
             self.netfunc = False
@@ -20,6 +21,7 @@ class Ship:
             # self.netfunc.mutate()
         else:
             self.netfunc = netfunc  # function to get net output
+        self.getnet = getnetfunc  # reference to function object of related net
         self.vardict = vardict
         self.x = vardict['scr_w'] / 2
         self.y = vardict['scr_h'] / 2
@@ -45,6 +47,7 @@ class Ship:
         self.colour = colour
         self.shotdelay = 0
         self.rays = []
+        self.font2 = SysFont('lucidaconsole', 20)
 
     def take_values(self, vallist):
         self.movements = vallist
@@ -71,7 +74,7 @@ class Ship:
                                                 self.y + self.ship_still.get_height() / 2 - self.rotated.get_height() / 2))
                 self.costume = self.ship_still
 
-    def move(self):
+    def move(self, printins=False):
         self.shotdelay += 1
         if self.netfunc is False:
             pressed_keys = pygame.key.get_pressed()
@@ -96,7 +99,15 @@ class Ship:
             self.x += self.xmomentum
             self.y += self.ymomentum
         else:
-            ins = self.raycast(1000)
+            ins = self.raycast(0)
+            if printins:
+                txt = self.font2.render('Input Values:', True, (255, 255, 255))
+                drop = txt.get_height() + 5
+                self.screen.blit(txt, (0, drop * (9)))
+                for i in range(len(ins)):
+                    txt = self.font2.render(f'{ins[i]}', True, (255, 255, 255))
+                    drop = txt.get_height() + 5
+                    self.screen.blit(txt, (0, drop * (i + 10)))
             # print(f'raycast()len: {len(ins)}')
             # print(f'ins: {ins}')
             # self.net.getinput(ins)  # gen 1 functions

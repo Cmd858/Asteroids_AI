@@ -81,7 +81,7 @@ population = Pop(popnum, 5, 3)  # TODO: move all net control to Pop2
 ships = []
 for i in range(popnum):
     colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    ships.append(Ship(vardict, colour, population.nets[i].run_net))  # reference function object so it can be called
+    ships.append(Ship(vardict, colour, population.nets[i].run_net, population.nets[i].getnet))  # reference function object so it can be called
 
 fitnesslist = []
 drawrays = True
@@ -118,7 +118,7 @@ def reset(load=False):
     if load == False:
         for i in range(popnum):
             colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-            ships.append(Ship(vardict, colour, population.nets[i].run_net))  # remember to put function object as arg
+            ships.append(Ship(vardict, colour, population.nets[i].run_net, population.nets[i].getnet))  # remember to put function object as arg
         population.mutate_all(5)
         # nets = copy.deepcopy(population.combfunc(fitnesslist, newnetnum))
         # for i in range(int(popsize * (1 - newnetrate))):
@@ -235,7 +235,10 @@ while 1:
                 else:
                     drawbool = False
                 ships[i].gametick(drawbool)  # gametick first to create asteroids before raycast()
-                ships[i].move()
+                if i == 0:
+                    ships[i].move(dispinfo)  # draws the input values of first net
+                else:
+                    ships[i].move()
                 ships[i].off_screen()
                 if ships[i].hit() or timeout >= 117200:  # timeout of 2 mins Without time.time() to stop warp
                     fitnesslist.append((ships[i], ships[i].score))
@@ -265,7 +268,7 @@ while 1:
                 screen.blit(txt, (0, drop * 7))
                 # txt = font2.render(f'LastNetVars: {ships[-1].movements}', True, (255, 255, 255))
                 # screen.blit(txt, (0, drop * 8))
-                population.draw_net(screen, scr_w - 20, 20, 20, 30, 7)
+                population.draw_net(ships[0].getnet(), screen, scr_w - 20, 20, 20, 30, 7)
             pygame.display.update()
             # if len(asteroids) == 0:
             #     asteroid_spawn = time.time()

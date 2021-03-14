@@ -1,6 +1,5 @@
 from Net2 import Net
 
-
 class Pop:
     def __init__(self, popnum, rannum, keepnum):
         self.popnum = popnum  # total size of population
@@ -51,8 +50,8 @@ class Pop:
     def fileload(self, a):
         pass
 
-    def draw_net(self, screen, x, y, xbuf, ybuf, r):
-        self.nets[-1].draw_net(screen, x, y, xbuf, ybuf, r)  # calls drawnet() for last net in population bc idk why
+    def draw_net(self, net, screen, x, y, xbuf, ybuf, r):
+        net.draw_net(screen, x, y, xbuf, ybuf, r)  # calls drawnet() for last net in population bc idk why
 
 # TODO: copy using inheritance instead of deepcopy
 # TODO: maybe use same obj instead of expensive delete & remake

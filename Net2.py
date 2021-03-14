@@ -178,5 +178,8 @@ class Net:
             for j in range(len(self.net[i])):  # iterate through each node in layer i
                 self.net[i][j][0].layer = i  # to fix for new layer creation
 
+    def getnet(self):
+        return self
+
 # TODO: Pop2 controlled innov nums
 # TODO: prevent duplicate connections
