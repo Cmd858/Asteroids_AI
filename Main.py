@@ -6,7 +6,7 @@ import time
 import os
 from pygame.locals import *
 
-print(os.getcwd())
+# print(os.getcwd())
 
 from Ship import Ship
 # from Population import Population
@@ -76,71 +76,76 @@ vardict = {
     'ship_still': ship_still
 }
 
-population = Pop(popnum, 5, 3)  # TODO: move all net control to Pop2
+population = Pop(popnum, 5, 3)
 
 ships = []
 for i in range(popnum):
     colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    ships.append(Ship(vardict, colour, population.nets[i].run_net, population.nets[i].getnet))  # reference function object so it can be called
+    ships.append(Ship(vardict, colour, population.nets[i].run_net,
+                      population.nets[i].getnet))  # reference function object so it can be called
 
-fitnesslist = []
+# variable definitions
+fitnesslists = [[]]
+genattemptnum = 1
+
+# game settings
 drawrays = True
 
-# net settings  # TODO: currently obsolete
+# net settings
 popsize = 25
 newnetrate = 0.1  # fraction of totally random nets
 newnetnum = 3  # how many parent nets are generated
 gen = 0
 stripemptynets = True
 topkeepnum = 3  # not included in popnum
-# TODO: Also fix agvfps
+maxgenattempts = 3  # number of times the generation is re-run
+
 
 # for i in pygame.font.get_fonts():
 #    print(i)
 
 
 def reset(load=False):
-    global fitnesslist, ships, gen, topkeepnum, popsize, newnetrate, newnetnum, timeout, highscore
-    global lasthighscore, starttime
-    # print(population.innovlist)
-    for i in range(popsize):
-        pass
-        # print(population.nets[i].innovs)
-    sortedfitnesslist = sorted(fitnesslist, key=lambda x: x[1])
-    # print(sortedfitnesslist)
-    # print(fitnesslist)
-    fitnesslist = sortedfitnesslist
-    # print(sortedfitnesslist)
-    ships = []
-    gen += 1
-    timeout = 0
-    starttime = time.time()
-    if load == False:
+    global fitnesslists, ships, gen, topkeepnum, popsize, newnetrate, newnetnum, timeout, highscore
+    global lasthighscore, genattemptnum, maxgenattempts
+    # print(genattemptnum, maxgenattempts)
+    if genattemptnum < maxgenattempts:
+        fitnesslists.append([])
+        ships = []
         for i in range(popnum):
-            colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-            ships.append(Ship(vardict, colour, population.nets[i].run_net, population.nets[i].getnet))  # remember to put function object as arg
-        population.mutate_all(5)
-        # nets = copy.deepcopy(population.combfunc(fitnesslist, newnetnum))
-        # for i in range(int(popsize * (1 - newnetrate))):
-        #     colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        #     ships.append(Ship(vardict, colour, copy.deepcopy(nets[random.randint(0, len(nets) - 1)])))
-        #     ships[-1].net.mutate()
-        # for i in range(int(popsize * newnetrate)):
-        #     colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        #     ships.append(Ship(vardict, colour, None))
-        # for i in range(topkeepnum):
-        # print(
-        #     f'Saved net: {fitnesslist[-(i + 1)][0]},fitnesslist: {fitnesslist[-(i + 1)][1]},score: {fitnesslist[-(i + 1)][0].score}')
-        # colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        # print(i, -(i + 1), len(fitnesslist))
-        # ships.append(Ship(vardict, colour, fitnesslist[-(i + 1)][0].net))
+            colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))  # TODO: inherit colours
+            ships.append(Ship(vardict, colour, population.nets[i].run_net, population.nets[i].getnet))
+
+        genattemptnum += 1
+        timeout = 0
     else:
-        loadall()
-    if highscore < fitnesslist[-1][1]:
-        highscore = fitnesslist[-1][1]
-    print(f'High Score: {highscore}')
-    lasthighscore = fitnesslist[-1][1]
-    fitnesslist = []
+        sortedfitnesslist = []
+        averagedfitnesslist = []
+        for i in range(maxgenattempts):
+            sortedfitnesslist.append(sorted(fitnesslists[i], key=lambda x: str(x[0].getnet())))
+            # results within expected variance, correct sorting
+        for i in range(len(fitnesslists[0])):
+            averagedfitnesslist.append((sum([sortedfitnesslist[j][i][1] \
+                                             for j in range(len(sortedfitnesslist))])/genattemptnum,
+                                        sortedfitnesslist[0][i][0].getnet()))  # tuple with (avg_score, net2.net_obj)
+        avgsortedfitnesslist = sorted(averagedfitnesslist, key=lambda x: x[0], reverse=True)
+        ships = []
+        gen += 1
+        timeout = 0
+        if load == False:
+            for i in range(popnum):
+                colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                ships.append(Ship(vardict, colour, population.nets[i].run_net,
+                                  population.nets[i].getnet))  # remember to put function object as arg
+            population.mutate_all(5, topkeepnum)
+        else:
+            loadall()
+        if highscore < avgsortedfitnesslist[0][0]:
+           highscore = avgsortedfitnesslist[0][0]
+        print(f'High Score: {highscore}')
+        lasthighscore = avgsortedfitnesslist[0][0]
+        fitnesslists = [[]]
+        genattemptnum = 1
 
 
 def saveall():
@@ -241,11 +246,18 @@ while 1:
                     ships[i].move()
                 ships[i].off_screen()
                 if ships[i].hit() or timeout >= 117200:  # timeout of 2 mins Without time.time() to stop warp
-                    fitnesslist.append((ships[i], ships[i].score))
+                    try:
+                        # fitnesslists[genattemptnum - 1]
+                        fitnesslists[genattemptnum - 1].append((ships[i], ships[i].score))
+                    except Exception as e:
+                        print(genattemptnum)
+                        # print(fitnesslists)
+                        raise e
                     del ships[i]
                 i += 1
             i = 0
             if len(ships) == 0:
+                # print('reset')
                 reset()
 
             if dispinfo is True:
@@ -254,23 +266,29 @@ while 1:
                 drop = txt.get_height() + 5
                 txt = font2.render(f'Gen: {str(gen)}', True, (255, 255, 255))
                 screen.blit(txt, (0, drop))
-                txt = font2.render(f'ShipNum: {str(len(ships))}', True, (255, 255, 255))
+                txt = font2.render(f'SubGen: {str(genattemptnum)}/{str(maxgenattempts)}', True, (255, 255, 255))
                 screen.blit(txt, (0, drop * 2))
-                txt = font2.render(f'DrawNum: {str(drawnum)}', True, (255, 255, 255))
+                txt = font2.render(f'ShipNum: {str(len(ships))}', True, (255, 255, 255))
                 screen.blit(txt, (0, drop * 3))
-                txt = font2.render(f'DrawRays: {str(drawrays)}', True, (255, 255, 255))
+                txt = font2.render(f'DrawNum: {str(drawnum)}', True, (255, 255, 255))
                 screen.blit(txt, (0, drop * 4))
-                txt = font2.render(f'HighScore: {str(highscore)}', True, (255, 255, 255))
+                txt = font2.render(f'DrawRays: {str(drawrays)}', True, (255, 255, 255))
                 screen.blit(txt, (0, drop * 5))
-                txt = font2.render(f'LastHighScore: {str(lasthighscore)}', True, (255, 255, 255))
+                txt = font2.render(f'HighScore: {str(highscore)}', True, (255, 255, 255))
                 screen.blit(txt, (0, drop * 6))
-                txt = font2.render(f'AvgFPS: {int(timeout / (time.time() - starttime))}', True, (255, 255, 255))
+                txt = font2.render(f'LastHighScore: {str(lasthighscore)}', True, (255, 255, 255))
                 screen.blit(txt, (0, drop * 7))
+                endtime = time.time()
+                txt = font2.render(f'AvgFPS: {int(1/(endtime - starttime))}', True, (255, 255, 255))
+                starttime = time.time()
+                screen.blit(txt, (0, drop * 8))  # ^ + 1 at end bc zero division
                 # txt = font2.render(f'LastNetVars: {ships[-1].movements}', True, (255, 255, 255))
-                # screen.blit(txt, (0, drop * 8))
+                # screen.blit(txt, (0, drop * 9))
                 population.draw_net(ships[0].getnet(), screen, scr_w - 20, 20, 20, 30, 7)
             pygame.display.update()
             # if len(asteroids) == 0:
             #     asteroid_spawn = time.time()
             timeout += 1  # for the clock
     pygame.display.update()
+
+# TODO: Add multithreading because it would be cool

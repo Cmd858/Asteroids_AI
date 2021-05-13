@@ -35,5 +35,3 @@ class Shot:
 
     def delete(self):
         return self.deathtick > 120
-
-# TODO: inherit colour from ship class

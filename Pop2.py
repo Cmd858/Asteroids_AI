@@ -16,8 +16,12 @@ class Pop:
         # hmm no bc dealt with in main, maybe should do in here though?
         # TODO: introduce speciation
 
-    def mutate_all(self, repval):  # value to repeat mutation
-        for i in range(len(self.nets)):
+    def mutate_all(self, repval, start=0, end=None):  # value to repeat mutation
+        if end is not None:
+            poprange = range(start, end)
+        else:
+            poprange = range(start, self.popnum)
+        for i in poprange:
             for j in range(repval):  # iterates through all nets and muatates them
                 self.nets[i].mutate()
                 self.nets[i].getlayers()  # idk why this is still here
@@ -58,7 +62,7 @@ class Pop:
 # TODO: paper notes below
 
 # NOTE: 30 pg NEAT paper, pg 11 line 3: node mutations have new > out = old weight, in > new = 1 (to minimise impact)
-# probs should do something like this maybe  # done this i think
+# probs should do something like this maybe  # completed
 
 # NOTE2: pg 12 of NEAT paper for combining nets properly
 

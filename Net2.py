@@ -48,7 +48,6 @@ class Net:
         if randint(0, 3) == 0:  # node mutation
             # figure out way way to add more than one layer but not too many
             gotlayer = False
-            # TODO: make new layer seperate mutation
             #layer = randint(0, len(self.net) - 1)
             layer = len(self.net) - 1
             while not gotlayer:  # recurse back through possibilities
@@ -88,6 +87,11 @@ class Net:
                         #else:
                          #   return  # prevents net growing too large
                     # if len(self.net[layer][nodeindex][0].inputs) > 0:
+                    #self.net[layer][nodeindex][0].layer = layer
+                    if len(self.net[layer]) <= nodeindex:
+                        print('Not enough space')
+                        print(f'{layer} {len(self.net)} {len(self.net[layer])} {nodeindex}')
+                        return  # not enough room in the layer
                     self.net[layer][nodeindex][0].inputs.append(newnode)  # appends new input to net's vars
                     inmid = (targetnode[0].nodenum, newnode[0].nodenum)  # get tuple of connection intersection
                     midout = (newnode[0].nodenum, self.net[layer][nodeindex][0].nodenum)  # mess but works
@@ -102,7 +106,7 @@ class Net:
         if randint(0, 10) == 0:
             if len(self.net) < 10:
                 if len(self.net)-2 > 1:
-                    self.net.insert(randint(1, len(self.net)-2), [])  # TODO: check for jank, possible range of 1 len error
+                    self.net.insert(randint(1, len(self.net)-2), [])
                 else:
                     self.net.insert(1, [])
         if randint(0, 1) == 0:  # weight mutation
@@ -110,7 +114,6 @@ class Net:
         if randint(0, 1) == 0:  # bias mutation
             pass
         self.correct_layers()
-        # TODO: fix skip crash on max layers
         # TODO: add innovs appends in node mutation
         # TODO: add bias and weight mutation
 
@@ -161,8 +164,24 @@ class Net:
                     inp = self.net[i][j][0].inputs[k][0]
                     x2 = x - xbuf * (width - inp.layer)  # complicated calcs for positions
                     # print(self.net[i][j][0].inputs[k])
-                    y2 = y + ybuf * (self.net[inp.layer].index(self.net[i][j][0].inputs[k]) + (
-                                maxh - len(self.net[inp.layer])) / 2)
+                    try:
+                        #y2 = y + ybuf * (self.net[inp.layer].index(self.net[i][j][0].inputs[k]) + (
+                        #        maxh - len(self.net[inp.layer])) / 2)
+                        if inp.layer != -1:
+                            pass
+                            #print(inp.layer, i, j, k)
+                            #inp.layer = i
+                        y2 = y + ybuf * (self.net[inp.layer].index(self.net[i][j][0].inputs[k]) + (
+                                 maxh - len(self.net[inp.layer])) / 2)
+                    except ValueError as e:
+                        print(e)
+                        print(i, j, k)
+                        print(f'NetLayer: {self.net[inp.layer]} Layer: {inp.layer} InpLen: {len(self.net[i][j][0].inputs)} K: {k}')
+                        print(self.net)
+                        #raise ValueError
+                        self.net[i][j][0].inputs.pop(k)  # #TODO: temp solution to error, maybe stop cause?
+                        continue
+
                     # gets pos of list
                     if self.net[i][j][0].inputs[k][1] >= 0:
                         self.colour = (220, 0, 0)  # set colour and draw net connections
